@@ -26,26 +26,6 @@ website = simc_opts['website']
 os.makedirs(os.path.dirname(os.path.join(htmldir + 'debug', 'test.file')), exist_ok=True)
 
 
-def check_version():
-    git = subprocess.check_output(['git', 'rev-parse', '--is-inside-work-tree']).decode(sys.stdout.encoding)
-    if git:
-        for line in subprocess.check_output(['git', 'remote', '-v']).decode(sys.stdout.encoding).split('\n'):
-            if 'https' in line and '(fetch)' in line:
-                subprocess.Popen(['git', 'fetch'], universal_newlines=True, stderr=None, stdout=None)
-                for output in subprocess.check_output(['git', 'status']).decode(sys.stdout.encoding).split('\n'):
-                    if 'Your branch is' in output:
-                        if 'up-to-date' in output:
-                            return 'Bot is up to date'
-                        elif 'behind' in output:
-                            return 'Update available for bot'
-                        else:
-                            return 'Bot version unknown'
-            elif 'git@github.com' in git and '(fetch)' in git:
-                return 'Bot version unknown'
-    else:
-        return 'Bot version unknown'
-
-
 def check_simc():
     null = open(os.devnull, 'w')
     stdout = open(os.path.join(htmldir, 'debug', 'simc.ver'), "w")
@@ -161,7 +141,6 @@ async def on_message(message):
                 msg = open('help.file', 'r', encoding='utf8').read()
                 await bot.send_message(message.author, msg)
             elif args[1].startswith(('v', 'version')):
-                await bot.send_message(message.channel, check_version())
                 await bot.send_message(message.channel, check_simc())
             else:
                 if message.channel != channel:
@@ -282,7 +261,6 @@ async def on_ready():
     print('Logged in as')
     print(bot.user.name)
     print(bot.user.id)
-    print(check_version())
     print(check_simc())
     print('--------------')
     await bot.change_presence(game=discord.Game(name='Simulation: Ready'))
