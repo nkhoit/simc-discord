@@ -6,6 +6,7 @@ import aiohttp
 import asyncio
 import time
 import json
+import simc_utils
 from urllib.parse import quote
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
