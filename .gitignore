@@ -1,2 +1,6 @@
 *.json
+htmldir
+hmtldir/*
+simc_install
+simc_install/*
 __pycache__
