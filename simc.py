@@ -6,7 +6,7 @@ import aiohttp
 import asyncio
 import time
 import json
-import simc_utils
+from simc_utils import *
 from urllib.parse import quote
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -26,10 +26,10 @@ htmldir = simc_opts['htmldir']
 website = simc_opts['website']
 os.makedirs(os.path.dirname(os.path.join(htmldir + 'debug', 'test.file')), exist_ok=True)
 
-def sim_noreport(realm, char, scale, data, addon, region, iterations, fightstyle,
-                 enemy, length, l_fixed, api_key, threads, process_priority, executable):
+async def sim_noreport(realm, char, scale, data, addon, region, iterations, fightstyle,  
+                 enemy, length, l_fixed, api_key, threads, process_priority, executable, message):
     await bot.send_message(message.channel, 'Simulating: Starting...')
-    result_str = sim_nohtml(realm, char, scale, data, addon, region, iterations, fightstyle,
+    result_str = await sim_nohtml(realm, char, scale, data, addon, region, iterations, fightstyle,
                  enemy, length, l_fixed, api_key, threads, process_priority, executable)
     await bot.send_message(message.channel, trim_report_string(result_str))
     await bot.change_presence(status=discord.Status.online, game=discord.Game(name='Sim: Ready'))
@@ -270,7 +270,7 @@ async def on_message(message):
                     else:
                         bot.loop.create_task(sim_noreport(realm, char, scale, data, addon, region,
                                                              iterations, fightstyle, enemy, length, l_fixed, 
-                                                             api_key, threads, process_priority, executable))
+                                                             api_key, threads, process_priority, simc_opts['executable'], message))
 
 
 @bot.event
