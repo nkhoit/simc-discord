@@ -29,9 +29,15 @@ os.makedirs(os.path.dirname(os.path.join(htmldir + 'debug', 'test.file')), exist
 async def sim_noreport(realm, char, scale, data, addon, region, iterations, fightstyle,  
                  enemy, length, l_fixed, api_key, threads, process_priority, executable, message):
     await bot.send_message(message.channel, 'Simulating: Starting...')
-    result_str = await sim_nohtml(realm, char, scale, data, addon, region, iterations, fightstyle,
-                 enemy, length, l_fixed, api_key, threads, process_priority, executable)
-    await bot.send_message(message.channel, trim_report_string(result_str))
+    await asyncio.sleep(1)
+    try:
+        result_str = await sim_nohtml(realm, char, scale, data, addon, region, iterations, fightstyle,
+                    enemy, length, l_fixed, api_key, threads, process_priority, executable)
+        await bot.send_message(message.channel, trim_report_string(result_str))
+    except:
+        await bot.send_message(message.channel, "Error received, aborting sim")
+    print('Aborting sim')
+    await asyncio.sleep(1)
     await bot.change_presence(status=discord.Status.online, game=discord.Game(name='Sim: Ready'))
 
 def check_simc():
@@ -79,39 +85,44 @@ async def sim(realm, char, scale, filename, data, addon, region, iterations, fig
     if l_fixed == 1:
         options += ' vary_combat_length=0.0 fixed_time=1'
 
-    load = await bot.send_message(message.channel, 'Simulating: Starting...')
-    command = "%s %s" % (simc_opts['executable'], options)
-    stout = open(os.path.join(htmldir, 'debug', 'simc.stout'), "w")
-    sterr = open(os.path.join(htmldir, 'debug', 'simc.sterr'), "w")
-    process = subprocess.Popen(command.split(" "), universal_newlines=True, stdout=stout, stderr=sterr)
-    await asyncio.sleep(1)
-    while loop:
-        readstout = open(os.path.join(htmldir, 'debug', 'simc.stout'), "r")
-        readsterr = open(os.path.join(htmldir, 'debug', 'simc.sterr'), "r")
+    try:
+        load = await bot.send_message(message.channel, 'Simulating: Starting...')
+        command = "%s %s" % (simc_opts['executable'], options)
+        stout = open(os.path.join(htmldir, 'debug', 'simc.stout'), "w")
+        sterr = open(os.path.join(htmldir, 'debug', 'simc.sterr'), "w")
+        process = subprocess.Popen(command.split(" "), universal_newlines=True, stdout=stout, stderr=sterr)
         await asyncio.sleep(1)
-        process_check = readstout.readlines()
-        err_check = readsterr.readlines()
-        if len(err_check) > 0:
-            if 'ERROR' in err_check[-1]:
-                await bot.change_presence(status=discord.Status.online, game=discord.Game(name='Sim: Ready'))
-                await bot.edit_message(load, 'Error, something went wrong: ' + website + 'debug/simc.sterr')
-                process.terminate()
-                return
-        if len(process_check) > 1:
-            if 'report took' in process_check[-2]:
-                loop = False
-                link = 'Simulation: %ssims/%s/%s.html' % (website, char, filename)
-                await bot.change_presence(status=discord.Status.online, game=discord.Game(name='Sim: Ready'))
-                await bot.edit_message(load, link + ' {0.author.mention}'.format(message))
-                process.terminate()
-            else:
-                if 'Generating' in process_check[-1]:
-                    done = '█' * (20 - process_check[-1].count('.'))
-                    missing = '░' * (process_check[-1].count('.'))
-                    progressbar = done + missing
-                    procent = 100 - process_check[-1].count('.') * 5
-                    load = await bot.edit_message(load, process_check[-1].split()[1] + ' ' + progressbar + ' ' +
-                                                  str(procent) + '%')
+        while loop:
+            readstout = open(os.path.join(htmldir, 'debug', 'simc.stout'), "r")
+            readsterr = open(os.path.join(htmldir, 'debug', 'simc.sterr'), "r")
+            await asyncio.sleep(1)
+            process_check = readstout.readlines()
+            err_check = readsterr.readlines()
+            if len(err_check) > 0:
+                if 'ERROR' in err_check[-1]:
+                    await bot.change_presence(status=discord.Status.online, game=discord.Game(name='Sim: Ready'))
+                    await bot.edit_message(load, 'Error, something went wrong: ' + website + 'debug/simc.sterr')
+                    process.terminate()
+                    return
+            if len(process_check) > 1:
+                if 'report took' in process_check[-2]:
+                    loop = False
+                    link = 'Simulation: %ssims/%s/%s.html' % (website, char, filename)
+                    await bot.change_presence(status=discord.Status.online, game=discord.Game(name='Sim: Ready'))
+                    await bot.edit_message(load, link + ' {0.author.mention}'.format(message))
+                    process.terminate()
+                else:
+                    if 'Generating' in process_check[-1]:
+                        done = '█' * (20 - process_check[-1].count('.'))
+                        missing = '░' * (process_check[-1].count('.'))
+                        progressbar = done + missing
+                        procent = 100 - process_check[-1].count('.') * 5
+                        load = await bot.edit_message(load, process_check[-1].split()[1] + ' ' + progressbar + ' ' +
+                                                    str(procent) + '%')
+    except:
+        await bot.send_message(message.channel, 'Error occurred, aborting simulation')
+        await asyncio.sleep(1)
+        await bot.change_presence(status=discord.Status.online, game=discord.Game(name='Sim: Ready'))
 
 
 def check(addon_data):
