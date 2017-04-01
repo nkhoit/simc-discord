@@ -6,7 +6,7 @@ import aiohttp
 import asyncio
 import time
 import json
-import simc_utils
+from simc_utils import *
 from urllib.parse import quote
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -26,6 +26,13 @@ htmldir = simc_opts['htmldir']
 website = simc_opts['website']
 os.makedirs(os.path.dirname(os.path.join(htmldir + 'debug', 'test.file')), exist_ok=True)
 
+async def sim_noreport(realm, char, scale, data, addon, region, iterations, fightstyle,  
+                 enemy, length, l_fixed, api_key, threads, process_priority, executable, message):
+    await bot.send_message(message.channel, 'Simulating: Starting...')
+    result_str = await sim_nohtml(realm, char, scale, data, addon, region, iterations, fightstyle,
+                 enemy, length, l_fixed, api_key, threads, process_priority, executable)
+    await bot.send_message(message.channel, trim_report_string(result_str))
+    await bot.change_presence(status=discord.Status.online, game=discord.Game(name='Sim: Ready'))
 
 def check_simc():
     null = open(os.devnull, 'w')
@@ -127,6 +134,7 @@ async def on_message(message):
     addon = ''
     aoe = 'no'
     enemy = ''
+    giveReport = True
     fightstyle = simc_opts['fightstyles'][0]
     movements = ''
     length = simc_opts['length']
@@ -182,6 +190,9 @@ async def on_message(message):
                         elif args[i].startswith(('a ', 'aoe ')):
                             temp = args[i].split()
                             aoe = temp[1]
+                        #Does not create HTML report, just text with playername + DPS
+                        elif args[i].startswith(('n ','noreport ')):
+                            giveReport = False
                         elif args[i].startswith(('l ', 'length ')):
                             temp = args[i].split()
                             length = temp[1]
@@ -251,10 +262,15 @@ async def on_message(message):
                           'Iterations: %s\nScaling: %s\nData: %s' % (realm.capitalize(), char.capitalize(), movements,
                                                                      length, aoe.capitalize(), iterations,
                                                                      scaling.capitalize(), data.capitalize())
-                    filename = '%s-%s' % (char, timestr)
                     await bot.send_message(message.channel, msg)
-                    bot.loop.create_task(sim(realm, char, scale, filename, data, addon, region, iterations, fightstyle,
-                                             enemy, length, l_fixed, api_key, message))
+                    if giveReport:
+                        filename = '%s-%s' % (char, timestr)
+                        bot.loop.create_task(sim(realm, char, scale, filename, data, addon, region, iterations, fightstyle,
+                                                 enemy, length, l_fixed, api_key, message))
+                    else:
+                        bot.loop.create_task(sim_noreport(realm, char, scale, data, addon, region,
+                                                             iterations, fightstyle, enemy, length, l_fixed, 
+                                                             api_key, threads, process_priority, simc_opts['executable'], message))
 
 
 @bot.event
