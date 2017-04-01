@@ -8,6 +8,7 @@
 -l      -length                **Choose fight length in seconds** *(Default is 400)*
 -a      -aoe                    **yes/no** *(Default is no)*
 -v      -version              **gives the version of simulationcraft being used**
+-n      -noreport   **no html report**
 
 ● Simulate using armory with stat scaling:
 `!simc -character NAME -scale yes`

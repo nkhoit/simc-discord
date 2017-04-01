@@ -36,7 +36,6 @@ async def sim_noreport(realm, char, scale, data, addon, region, iterations, figh
         await bot.send_message(message.channel, trim_report_string(result_str))
     except:
         await bot.send_message(message.channel, "Error received, aborting sim")
-    print('Aborting sim')
     await asyncio.sleep(1)
     await bot.change_presence(status=discord.Status.online, game=discord.Game(name='Sim: Ready'))
 
